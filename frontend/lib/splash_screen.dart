@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
+import 'package:ota_update/ota_update.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:skydash_financial_tracker/src/services/local_auth_service.dart';
-import 'package:skydash_financial_tracker/src/features/main_screen.dart';
 import 'package:skydash_financial_tracker/src/constants/app_colors.dart';
 import 'package:skydash_financial_tracker/src/features/auth/login_screen.dart';
+import 'package:skydash_financial_tracker/src/features/main_screen.dart';
+import 'package:skydash_financial_tracker/src/services/api_service.dart';
+import 'package:skydash_financial_tracker/src/services/local_auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,10 +17,60 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final ApiService _apiService = ApiService();
+  static final logger = Logger();
+
   @override
   void initState() {
     super.initState();
-    _checkAuthStatus();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    await Future.delayed(const Duration(seconds: 2));
+    final updateInfo = await _apiService.checkForUpdate();
+    if (updateInfo != null && mounted) {
+      _showUpdateDialog(updateInfo);
+    } else {
+      _checkAuthStatus();
+    }
+  }
+
+  void _showUpdateDialog(Map<String, String> updateInfo) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('Update Tersedia: v${updateInfo['version']}'),
+        content: SingleChildScrollView(child: Text('Catatan Rilis:\n\n${updateInfo['notes']}')),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _checkAuthStatus();
+            },
+            child: const Text('NANTI SAJA'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              _startUpdate(updateInfo['url']!);
+            },
+            child: const Text('UPDATE SEKARANG'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startUpdate(String url) {
+    try {
+      OtaUpdate().execute(url, destinationFilename: 'skydash-finance-tracker.apk')
+        .listen((OtaEvent event) {
+          logger.i('OTA EVENT: ${event.status} : ${event.value}');
+        });
+    } catch (e) {
+      logger.e('Failed to start OTA update: $e');
+    }
   }
 
   Future<void> _checkAuthStatus() async {

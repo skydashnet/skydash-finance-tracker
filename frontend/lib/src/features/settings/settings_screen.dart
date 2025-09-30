@@ -32,21 +32,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _toggleBiometric(bool value) async {
     final prefs = await SharedPreferences.getInstance();
+    
     if (value) {
       final canAuth = await LocalAuthService.canAuthenticate();
-      if (canAuth && mounted) { // <-- PERBAIKAN
-      await prefs.setBool('isBiometricEnabled', true);
-      setState(() => _isBiometricEnabled = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login Biometrik diaktifkan!'), backgroundColor: Colors.green),
-        );
-      } else if (mounted) {
+      
+      if (canAuth) {
+        await prefs.setBool('isBiometricEnabled', true);
+        if (!mounted) return;
+        
+        setState(() => _isBiometricEnabled = true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Perangkat tidak mendukung biometrik.'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Login Biometrik diaktifkan!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Perangkat tidak mendukung biometrik.'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } else {
       await prefs.setBool('isBiometricEnabled', false);
+      if (!mounted) return;
+      
       setState(() => _isBiometricEnabled = false);
     }
   }
@@ -58,16 +72,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Konfirmasi'),
         content: const Text('Apakah kamu yakin ingin keluar?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Logout')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Logout'),
+          ),
         ],
       ),
     );
 
-    if (confirm == true && context.mounted) {
+    if (confirm == true) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('token');
-      
+      if (!context.mounted) return;
       Provider.of<UserProvider>(context, listen: false).clearUser();
 
       Navigator.of(context).pushAndRemoveUntil(

@@ -1,7 +1,9 @@
 import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
 import 'package:local_auth/local_auth.dart';
 
 class LocalAuthService {
+  static final logger = Logger();
   static final _auth = LocalAuthentication();
 
   static Future<bool> canAuthenticate() async {
@@ -20,7 +22,7 @@ class LocalAuthService {
         ),
       );
     } on PlatformException catch (e) {
-      print(e);
+      logger.e(e);
       return false;
     }
   }

@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
+  final logger = Logger();
   final String _baseUrl = 'https://api.skydashnet.my.id/api';
 
   Future<Map<String, dynamic>> register({
@@ -365,4 +369,46 @@ class ApiService {
     }
   }
   
+  Future<Map<String, String>?> checkForUpdate() async {
+    try {
+      // 1. Dapatkan info versi aplikasi saat ini
+      final currentInfo = await PackageInfo.fromPlatform();
+      final currentVersion = Version.parse(currentInfo.version);
+      logger.i('Current App Version: $currentVersion');
+
+      final url = Uri.parse('https://api.github.com/repos/skydashnet/skydash-finance-tracker/releases/latest');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> releaseInfo = json.decode(response.body);
+        
+        // Hapus 'v' dari tag name jika ada (e.g., v1.1.5 -> 1.1.5)
+        final latestVersionStr = (releaseInfo['tag_name'] as String).replaceAll('v', '');
+        final latestVersion = Version.parse(latestVersionStr);
+        logger.i('Latest GitHub Version: $latestVersion');
+
+        // 3. Bandingkan versi
+        if (latestVersion > currentVersion) {
+          // Cari aset .apk di dalam rilis
+          final assets = releaseInfo['assets'] as List;
+          final apkAsset = assets.firstWhere(
+            (asset) => (asset['name'] as String).endsWith('.apk'),
+            orElse: () => null,
+          );
+
+          if (apkAsset != null) {
+            return {
+              'version': latestVersionStr,
+              'url': apkAsset['browser_download_url'],
+              'notes': releaseInfo['body'] ?? 'Tidak ada catatan rilis.',
+            };
+          }
+        }
+      }
+      return null; // Tidak ada update
+    } catch (e) {
+      logger.e('Update check failed: $e');
+      return null;
+    }
+  }
 }

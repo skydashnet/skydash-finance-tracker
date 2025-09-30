@@ -25,46 +25,49 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   Future<void> _performLogin() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+  if (_formKey.currentState!.validate()) {
+    setState(() {
+      _isLoading = true;
+    });
 
-      final result = await _apiService.login(
-        email: _emailController.text,
-        password: _passwordController.text,
+    final result = await _apiService.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result['statusCode'] == 200) {
+      final token = result['body']['token'];
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
+      if (!mounted) return;
+      final Map<String, dynamic> payload = Jwt.parseJwt(token);
+      final String username = payload['username'];
+      final String email = _emailController.text;
+
+      Provider.of<UserProvider>(context, listen: false).saveUser(
+        username: username,
+        email: email,
       );
 
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (mounted) {
-        if (result['statusCode'] == 200) {
-          final token = result['body']['token'];
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('token', token);
-          final Map<String, dynamic> payload = Jwt.parseJwt(token);
-          final String username = payload['username'];
-          final String email = _emailController.text;
-
-          Provider.of<UserProvider>(context, listen: false).saveUser(username: username, email: email);
-
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const MainScreen()),
-            (Route<dynamic> route) => false,
-          );
-        } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Login failed: ${result['body']['message']}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-        }
-      }
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+        (Route<dynamic> route) => false,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Login failed: ${result['body']['message']}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+}
 
   @override
   void dispose() {

@@ -165,18 +165,17 @@ class TransactionHistoryScreen extends StatelessWidget {
           onDismissed: (direction) async {
             final transactionId = transaction['id'];
             final result = await _apiService.deleteTransaction(transactionId);
+            if (!context.mounted) return;
 
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(result['body']['message']),
-                  backgroundColor:
-                      result['statusCode'] == 200 ? Colors.green : Colors.red,
-                ),
-              );
-              Provider.of<TransactionProvider>(context, listen: false)
-                  .fetchTransactionsAndSummary();
-            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result['body']['message']),
+                backgroundColor:
+                    result['statusCode'] == 200 ? Colors.green : Colors.red,
+              ),
+            );
+            Provider.of<TransactionProvider>(context, listen: false)
+                .fetchTransactionsAndSummary();
           },
           child: Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -198,7 +197,12 @@ class TransactionHistoryScreen extends StatelessWidget {
                 builder: (context) {
                   final visual = CategoryIconMapper.getVisual(transaction['category_name']);
                   return CircleAvatar(
-                    backgroundColor: Color.fromRGBO(visual.color.red, visual.color.green, visual.color.blue, 0.15),
+                    backgroundColor: Color.fromRGBO(
+                      (visual.color.r * 255.0).round() & 0xff,
+                      (visual.color.g * 255.0).round() & 0xff,
+                      (visual.color.b * 255.0).round() & 0xff,
+                      0.15,
+                    ),
                     child: Icon(
                       visual.icon,
                       color: visual.color,
