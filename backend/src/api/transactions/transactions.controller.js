@@ -14,7 +14,10 @@ const transactionsController = {
       const sql = 'INSERT INTO transactions (user_id, category_id, amount, description, transaction_date) VALUES (?, ?, ?, ?, ?)';
       const [result] = await connection.query(sql, [userId, category_id, amount, description, transaction_date]);
       connection.release();
-
+      const [userTransactions] = await connection.query('SELECT COUNT(*) as count FROM transactions WHERE user_id = ?', [userId]);
+        if (userTransactions[0].count === 1) {
+          await connection.query('INSERT IGIGNORE INTO user_achievements (user_id, achievement_id) VALUES (?, ?)', [userId, 1]);
+        }
       res.status(201).json({
         message: 'Transaction created successfully',
         transactionId: result.insertId
