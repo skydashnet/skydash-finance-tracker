@@ -23,6 +23,7 @@ dependencies:
   logger: ^2.0.0
   another_flushbar: ^1.12.30
   confetti: ^0.7.0
+  flutter_markdown: ^0.7.1
 
 dev_dependencies:
   flutter_test:
