@@ -39,6 +39,32 @@ const userController = {
       console.error(error);
       res.status(500).json({ message: 'Server error' });
     }
+  },
+
+  getUserAchievements: async (req, res) => {
+    try {
+      const userId = req.user.userId;
+      const connection = await pool.getConnection();
+      const sql = `
+        SELECT 
+          a.id, 
+          a.name, 
+          a.description, 
+          a.icon_name, 
+          ua.unlocked_at 
+        FROM achievements a
+        LEFT JOIN user_achievements ua ON a.id = ua.achievement_id AND ua.user_id = ?
+        ORDER BY a.id;
+      `;
+      
+      const [achievements] = await connection.query(sql, [userId]);
+      connection.release();
+
+      res.status(200).json(achievements);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+    }
   }
 };
 
