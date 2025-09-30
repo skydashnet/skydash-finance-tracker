@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:ota_update/ota_update.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skydash_financial_tracker/src/constants/app_colors.dart';
@@ -42,7 +43,14 @@ class _SplashScreenState extends State<SplashScreen> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text('Update Tersedia: v${updateInfo['version']}'),
-        content: SingleChildScrollView(child: Text('Catatan Rilis:\n\n${updateInfo['notes']}')),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: MarkdownBody(
+              data: updateInfo['notes']!,
+            ),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -64,45 +72,47 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _startUpdate(String url) {
     try {
-      OtaUpdate().execute(url, destinationFilename: 'skydash-finance-tracker.apk')
-        .listen((OtaEvent event) {
-          logger.i('OTA EVENT: ${event.status} : ${event.value}');
-        });
+      OtaUpdate()
+          .execute(url, destinationFilename: 'skydash-finance-tracker.apk')
+          .listen((OtaEvent event) {
+            logger.i('OTA EVENT: ${event.status} : ${event.value}');
+          });
     } catch (e) {
       logger.e('Failed to start OTA update: $e');
     }
   }
 
   Future<void> _checkAuthStatus() async {
-  final prefs = await SharedPreferences.getInstance();
-  final bool isBiometricEnabled = prefs.getBool('isBiometricEnabled') ?? false;
-  final String? token = prefs.getString('token');
+    final prefs = await SharedPreferences.getInstance();
+    final bool isBiometricEnabled =
+        prefs.getBool('isBiometricEnabled') ?? false;
+    final String? token = prefs.getString('token');
 
-  await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1));
 
-  if (isBiometricEnabled && token != null) {
-    final didAuthenticate = await LocalAuthService.authenticate();
-    if (didAuthenticate && mounted) {
+    if (isBiometricEnabled && token != null) {
+      final didAuthenticate = await LocalAuthService.authenticate();
+      if (didAuthenticate && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+        return;
+      }
+    }
+
+    if (token != null && token.isNotEmpty && mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const MainScreen()),
       );
-      return;
+    } else if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
     }
   }
-
-  if (token != null && token.isNotEmpty && mounted) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const MainScreen()),
-    );
-  } else if (mounted) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-    );
-  }
-}
 
   @override
   Widget build(BuildContext context) {
