@@ -7,6 +7,7 @@ import 'package:skydash_financial_tracker/src/features/transactions/transaction_
 import 'package:provider/provider.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
 import 'package:skydash_financial_tracker/src/features/reports/reports_screen.dart';
+import 'package:skydash_financial_tracker/src/features/goals/goals_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -21,6 +22,7 @@ class _MainScreenState extends State<MainScreen> {
   static final List<Widget> _pages = <Widget>[
     const DashboardScreen(),
     TransactionHistoryScreen(),
+    const GoalsScreen(),
     const ReportsScreen(),
     const SettingsScreen(),
   ];
@@ -62,29 +64,20 @@ class _MainScreenState extends State<MainScreen> {
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              label: 'Dashboard',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history_outlined),
-              label: 'History',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.pie_chart_outline),
-              label: 'Reports',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              label: 'Settings',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
+            BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'History'),
+            BottomNavigationBarItem(icon: Icon(Icons.flag_outlined), label: 'Goals'),
+            BottomNavigationBarItem(icon: Icon(Icons.pie_chart_outline), label: 'Reports'),
+            BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), label: 'Settings'),
           ],
           currentIndex: _selectedIndex,
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: AppColors.textSecondary,
+          selectedItemColor: Theme.of(context).colorScheme.primary,
+          unselectedItemColor: Colors.grey,
           onTap: _onItemTapped,
           backgroundColor: Colors.transparent,
           elevation: 0,
+          showSelectedLabels: true,
+          showUnselectedLabels: false,
         ),
       ),
     );

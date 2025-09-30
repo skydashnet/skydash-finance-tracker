@@ -371,7 +371,6 @@ class ApiService {
   
   Future<Map<String, String>?> checkForUpdate() async {
     try {
-      // 1. Dapatkan info versi aplikasi saat ini
       final currentInfo = await PackageInfo.fromPlatform();
       final currentVersion = Version.parse(currentInfo.version);
       logger.i('Current App Version: $currentVersion');
@@ -382,14 +381,11 @@ class ApiService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> releaseInfo = json.decode(response.body);
         
-        // Hapus 'v' dari tag name jika ada (e.g., v1.1.5 -> 1.1.5)
         final latestVersionStr = (releaseInfo['tag_name'] as String).replaceAll('v', '');
         final latestVersion = Version.parse(latestVersionStr);
         logger.i('Latest GitHub Version: $latestVersion');
 
-        // 3. Bandingkan versi
         if (latestVersion > currentVersion) {
-          // Cari aset .apk di dalam rilis
           final assets = releaseInfo['assets'] as List;
           final apkAsset = assets.firstWhere(
             (asset) => (asset['name'] as String).endsWith('.apk'),
@@ -405,10 +401,74 @@ class ApiService {
           }
         }
       }
-      return null; // Tidak ada update
+      return null;
     } catch (e) {
       logger.e('Update check failed: $e');
       return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> createGoal({
+    required String name,
+    required double targetAmount,
+    String? imageUrl,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+      
+      final url = Uri.parse('$_baseUrl/goals');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+        body: json.encode({'name': name, 'target_amount': targetAmount, 'image_url': imageUrl}),
+      );
+      return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
+    }
+  }
+
+  Future<Map<String, dynamic>> getUserGoals() async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+
+      final url = Uri.parse('$_baseUrl/goals');
+      final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
+      return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
+    }
+  }
+
+  Future<Map<String, dynamic>> addSavingsToGoal(int goalId, double amount) async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+
+      final url = Uri.parse('$_baseUrl/goals/$goalId/add-savings');
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+        body: json.encode({'amount': amount}),
+      );
+      return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
+    }
+  }
+  
+  Future<Map<String, dynamic>> deleteGoal(int goalId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+
+      final url = Uri.parse('$_baseUrl/goals/$goalId');
+      final response = await http.delete(url, headers: {'Authorization': 'Bearer $token'});
+      return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
     }
   }
 }
