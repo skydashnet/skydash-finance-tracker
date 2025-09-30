@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skydash_financial_tracker/src/services/api_service.dart';
 
 class UserProvider extends ChangeNotifier {
+  final ApiService _apiService = ApiService();
   String? _username;
   String? _email;
+  List<dynamic> _achievements = [];
 
   String get username => _username ?? '...';
   String get email => _email ?? '...';
+  List<dynamic> get achievements => _achievements;
 
   UserProvider() {
     loadUser();
+    fetchAchievements();
   }
 
   Future<void> loadUser() async {
@@ -35,5 +40,13 @@ class UserProvider extends ChangeNotifier {
     _username = null;
     _email = null;
     notifyListeners();
+  }
+
+  Future<void> fetchAchievements() async {
+    final result = await _apiService.getUserAchievements();
+    if (result['statusCode'] == 200) {
+      _achievements = result['body'];
+      notifyListeners();
+    }
   }
 }

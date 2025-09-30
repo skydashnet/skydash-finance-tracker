@@ -471,4 +471,17 @@ class ApiService {
       return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
     }
   }
+
+  Future<Map<String, dynamic>> getUserAchievements() async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+
+      final url = Uri.parse('$_baseUrl/users/achievements');
+      final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
+      return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
+    }
+  }
 }

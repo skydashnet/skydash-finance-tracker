@@ -6,6 +6,7 @@ import 'package:skydash_financial_tracker/src/features/auth/login_screen.dart';
 import 'package:skydash_financial_tracker/src/providers/theme_provider.dart';
 import 'package:skydash_financial_tracker/src/providers/user_provider.dart';
 import 'package:skydash_financial_tracker/src/services/api_service.dart';
+import 'package:skydash_financial_tracker/src/features/achievements/achievements_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -223,6 +224,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: const Icon(Icons.person_outline),
             title: Text(userProvider.username),
             subtitle: Text(userProvider.email),
+          ),
+          ListTile(
+            leading: const Icon(Icons.emoji_events_outlined),
+            title: const Text('Pencapaian'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AchievementsScreen()),
+              );
+            },
           ),
           const Divider(),
 
