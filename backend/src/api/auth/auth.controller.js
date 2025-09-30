@@ -15,6 +15,8 @@ const defaultCategories = [
   { name: 'Kesehatan', type: 'expense' },
   { name: 'Pendidikan', type: 'expense' },
   { name: 'Keluarga', type: 'expense' },
+  { name: 'Tabungan', type: 'expense' },
+  { name: 'Lainnya', type: 'expense' }
 ];
 
 const authController = {

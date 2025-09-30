@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skydash_financial_tracker/src/services/api_service.dart';
+import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 
 class AddGoalScreen extends StatefulWidget {
   const AddGoalScreen({super.key});
@@ -12,7 +13,6 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
-  final _imageUrlController = TextEditingController();
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
 
@@ -22,19 +22,24 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
       final result = await _apiService.createGoal(
         name: _nameController.text,
         targetAmount: double.parse(_amountController.text),
-        imageUrl: _imageUrlController.text,
       );
+      
       if (mounted) {
         if (result['statusCode'] == 201) {
           Navigator.pop(context, true);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal: ${result['body']['message']}')),
-          );
+          NotificationHelper.showError(context, title: 'Gagal', message: result['body']['message']);
           setState(() => _isLoading = false);
         }
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _amountController.dispose();
+    super.dispose();
   }
 
   @override
@@ -59,11 +64,6 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
               decoration: const InputDecoration(labelText: 'Jumlah Target (Rp)'),
               keyboardType: TextInputType.number,
               validator: (v) => v!.isEmpty ? 'Jumlah tidak boleh kosong' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _imageUrlController,
-              decoration: const InputDecoration(labelText: 'URL Gambar (Opsional)'),
             ),
             const SizedBox(height: 32),
             ElevatedButton(

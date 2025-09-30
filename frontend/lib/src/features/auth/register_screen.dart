@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../services/api_service.dart';
+import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -38,19 +39,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (mounted) {
         if (result['statusCode'] == 201) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Registration successful! Please login.'),
-              backgroundColor: Colors.green,
-            ),
+          NotificationHelper.showSuccess(
+            context,
+            title: 'Berhasil',
+            message: result['body']['message'],
           );
           Navigator.pop(context);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Registration failed: ${result['body']['message']}'),
-              backgroundColor: Colors.red,
-            ),
+          NotificationHelper.showError(
+            context,
+            title: 'Gagal',
+            message: result['body']['message'],
           );
         }
       }

@@ -1,30 +1,85 @@
 const pool = require('../../config/database');
 
+const awardAchievement = async (connection, userId, achievementId) => {
+  await connection.query('INSERT IGNORE INTO user_achievements (user_id, achievement_id) VALUES (?, ?)', [userId, 1]);
+  
+  const [achievementCount] = await connection.query('SELECT COUNT(*) as count FROM user_achievements WHERE user_id = ?', [userId]);
+  if (achievementCount[0].count >= 5) {
+    await connection.query('INSERT IGNORE INTO user_achievements (user_id, achievement_id) VALUES (?, ?)', [userId, 9]);
+  }
+};
+
 const transactionsController = {
   createTransaction: async (req, res) => {
+    const connection = await pool.getConnection();
     try {
+      await connection.beginTransaction();
+
       const { category_id, amount, description, transaction_date } = req.body;
       const userId = req.user.userId;
 
-      if (!category_id || !amount || !transaction_date) {
-        return res.status(400).json({ message: 'Category, amount, and date are required' });
+      const sql = 'INSERT INTO transactions (user_id, category_id, amount, description, transaction_date) VALUES (?, ?, ?, ?, ?)';
+      await connection.query(sql, [userId, category_id, amount, description, transaction_date]);
+      
+      const [userTransactions] = await connection.query('SELECT COUNT(*) as count FROM transactions WHERE user_id = ?', [userId]);
+      if (userTransactions[0].count === 1) {
+        await awardAchievement(connection, userId, 1);
       }
 
-      const connection = await pool.getConnection();
-      const sql = 'INSERT INTO transactions (user_id, category_id, amount, description, transaction_date) VALUES (?, ?, ?, ?, ?)';
-      const [result] = await connection.query(sql, [userId, category_id, amount, description, transaction_date]);
-      connection.release();
-      const [userTransactions] = await connection.query('SELECT COUNT(*) as count FROM transactions WHERE user_id = ?', [userId]);
-        if (userTransactions[0].count === 1) {
-          await connection.query('INSERT IGIGNORE INTO user_achievements (user_id, achievement_id) VALUES (?, ?)', [userId, 1]);
+      const transactionHour = new Date().getHours();
+      if (transactionHour >= 0 && transactionHour < 4) {
+        await awardAchievement(connection, userId, 10);
+      } else if (transactionHour >= 4 && transactionHour < 6) {
+        await awardAchievement(connection, userId, 11);
+      }
+      
+      const [userData] = await connection.query('SELECT last_transaction_date, current_streak FROM users WHERE id = ?', [userId]);
+      const { last_transaction_date, current_streak } = userData[0];
+      const today = new Date(transaction_date);
+      let newStreak = current_streak;
+
+      if (last_transaction_date) {
+        const lastDate = new Date(last_transaction_date);
+        const diffTime = today - lastDate;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+          newStreak++;
+        } else if (diffDays > 1) {
+          newStreak = 1;
         }
-      res.status(201).json({
+      } else {
+        newStreak = 1;
+      }
+      
+      await connection.query('UPDATE users SET last_transaction_date = ?, current_streak = ? WHERE id = ?', [transaction_date, newStreak, userId]);
+      
+      if (newStreak >= 3) await awardAchievement(connection, userId, 4);
+      if (newStreak >= 7) await awardAchievement(connection, userId, 5);
+      if (newStreak >= 30) await awardAchievement(connection, userId, 6);
+      if (newStreak >= 100) await awardAchievement(connection, userId, 7);
+
+      const [newAchievements] = await connection.query(
+        `SELECT a.name, a.description, a.icon_name 
+        FROM achievements a 
+        JOIN user_achievements ua ON a.id = ua.achievement_id 
+        WHERE ua.user_id = ? AND ua.unlocked_at > NOW() - INTERVAL 5 SECOND`, 
+        [userId]
+      );
+      
+      await connection.commit();
+      
+      res.status(201).json({ 
         message: 'Transaction created successfully',
-        transactionId: result.insertId
+        unlockedAchievement: newAchievements.length > 0 ? newAchievements[0] : null,
       });
+
     } catch (error) {
+      await connection.rollback();
       console.error(error);
       res.status(500).json({ message: 'Server error' });
+    } finally {
+      if (connection) connection.release();
     }
   },
 

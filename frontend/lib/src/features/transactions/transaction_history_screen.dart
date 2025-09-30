@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 import 'package:skydash_financial_tracker/src/utils/category_icon_mapper.dart';
 import 'package:skydash_financial_tracker/src/constants/app_colors.dart';
 import 'package:skydash_financial_tracker/src/features/transactions/add_transaction_screen.dart';
@@ -166,14 +167,19 @@ class TransactionHistoryScreen extends StatelessWidget {
             final transactionId = transaction['id'];
             final result = await _apiService.deleteTransaction(transactionId);
             if (!context.mounted) return;
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(result['body']['message']),
-                backgroundColor:
-                    result['statusCode'] == 200 ? Colors.green : Colors.red,
-              ),
-            );
+            if (result['statusCode'] == 200) {
+              NotificationHelper.showSuccess(
+                context,
+                title: 'Berhasil',
+                message: result['body']['message'],
+              );
+            } else {
+              NotificationHelper.showError(
+                context,
+                title: 'Gagal',
+                message: result['body']['message'],
+              );
+            }
             Provider.of<TransactionProvider>(context, listen: false)
                 .fetchTransactionsAndSummary();
           },

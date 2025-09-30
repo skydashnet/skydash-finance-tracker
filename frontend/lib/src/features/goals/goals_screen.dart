@@ -1,7 +1,12 @@
+import 'dart:math';
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:skydash_financial_tracker/src/features/goals/add_goal_screen.dart';
+import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
 import 'package:skydash_financial_tracker/src/services/api_service.dart';
+import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({super.key});
@@ -13,11 +18,19 @@ class GoalsScreen extends StatefulWidget {
 class _GoalsScreenState extends State<GoalsScreen> {
   final ApiService _apiService = ApiService();
   late Future<List<dynamic>> _goalsFuture;
+  late ConfettiController _confettiController;
 
   @override
   void initState() {
     super.initState();
     _loadGoals();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
   }
 
   void _loadGoals() {
@@ -35,56 +48,91 @@ class _GoalsScreenState extends State<GoalsScreen> {
     }
   }
 
-  void _showAddSavingsDialog(Map<String, dynamic> goal) {
+  void _showAddSavingsDialog(BuildContext context, Map<String, dynamic> goal) {
     final amountController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: Text('Tambah Tabungan untuk "${goal['name']}"'),
           content: Form(
             key: formKey,
             child: TextFormField(
               controller: amountController,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
                 labelText: 'Jumlah (Rp)',
                 prefixText: 'Rp ',
               ),
               validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Jumlah tidak boleh kosong';
-                }
-                if (double.tryParse(value) == null) {
-                  return 'Masukkan angka yang valid';
-                }
+                if (value == null || value.isEmpty) return 'Jumlah tidak boleh kosong';
+                if (double.tryParse(value) == null) return 'Masukkan angka yang valid';
                 return null;
               },
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Batal'),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
                   final amount = double.parse(amountController.text);
-                  final result = await _apiService.addSavingsToGoal(goal['id'], amount);
+                  Navigator.pop(dialogContext);
+
+                  final transactionProvider = Provider.of<TransactionProvider>(context, listen: false);
+                  final categoriesResult = await _apiService.getCategories();
+                  if (!context.mounted) return;
+
+                  if (categoriesResult['statusCode'] != 200) {
+                    NotificationHelper.showError(context, title: 'Error', message: 'Gagal memuat daftar kategori.');
+                    return;
+                  }
                   
-                  if (mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(result['body']['message']),
-                        backgroundColor: result['statusCode'] == 200 ? Colors.green : Colors.red,
-                      ),
-                    );
-                    if (result['statusCode'] == 200) {
+                  final categories = categoriesResult['body'] as List;
+                  final Map<String, dynamic>? savingsCategory = categories.firstWhere(
+                    (cat) => cat['name'] == 'Tabungan' && cat['type'] == 'expense',
+                    orElse: () => null,
+                  );
+
+                  if (savingsCategory == null) {
+                     NotificationHelper.showError(context, title: 'Error', message: "Kategori 'Tabungan' (tipe: Pengeluaran) tidak ditemukan.");
+                     return;
+                  }
+
+                  final trxResult = await _apiService.createTransaction(
+                    categoryId: savingsCategory['id'],
+                    amount: amount,
+                    description: 'Menabung untuk ${goal['name']}',
+                    transactionDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                  );
+
+                  if (!context.mounted) return;
+
+                  if (trxResult['statusCode'] != 201) {
+                     NotificationHelper.showError(context, title: 'Gagal', message: 'Gagal membuat transaksi tabungan.');
+                     return;
+                  }
+
+                  final goalResult = await _apiService.addSavingsToGoal(goal['id'], amount);
+
+                  if (context.mounted) {
+                    if (goalResult['statusCode'] == 200) {
+                      NotificationHelper.showSuccess(context, title: 'Berhasil!', message: 'Tabungan berhasil ditambahkan.');
+                      transactionProvider.fetchTransactionsAndSummary();
                       _loadGoals();
+
+                      final updatedGoalAmount = num.parse(goal['current_amount'].toString()) + amount;
+                      final targetAmount = num.parse(goal['target_amount'].toString());
+                      if (updatedGoalAmount >= targetAmount && num.parse(goal['current_amount'].toString()) < targetAmount) {
+                         _confettiController.play();
+                      }
+                    } else {
+                      NotificationHelper.showError(context, title: 'Gagal', message: goalResult['body']['message']);
                     }
                   }
                 }
@@ -97,37 +145,77 @@ class _GoalsScreenState extends State<GoalsScreen> {
     );
   }
 
+  void _deleteGoal(int goalId, String goalName) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi Hapus'),
+        content: Text('Apakah kamu yakin ingin menghapus target "$goalName"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Hapus')),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      final result = await _apiService.deleteGoal(goalId);
+      if (mounted) {
+        if (result['statusCode'] == 200) {
+          NotificationHelper.showSuccess(context, title: 'Berhasil', message: result['body']['message']);
+          _loadGoals();
+          Provider.of<TransactionProvider>(context, listen: false).fetchTransactionsAndSummary();
+        } else {
+          NotificationHelper.showError(context, title: 'Gagal', message: result['body']['message']);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Target Tabungan'),
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: _goalsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          final goals = snapshot.data!;
-          if (goals.isEmpty) {
-            return const Center(child: Text('Kamu belum punya target. Ayo buat satu!'));
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async => _loadGoals(),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: goals.length,
-              itemBuilder: (context, index) {
-                return _buildGoalCard(goals[index]);
-              },
+      body: Stack(
+        children: [
+          FutureBuilder<List<dynamic>>(
+            future: _goalsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+              final goals = snapshot.data!;
+              if (goals.isEmpty) {
+                return const Center(child: Text('Kamu belum punya target. Ayo buat satu!'));
+              }
+              return RefreshIndicator(
+                onRefresh: () async => _loadGoals(),
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: goals.length,
+                  itemBuilder: (context, index) {
+                    return _buildGoalCard(goals[index]);
+                  },
+                ),
+              );
+            },
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [Colors.green, Colors.blue, Colors.pink, Colors.orange, Colors.purple],
+              createParticlePath: drawStar,
             ),
-          );
-        },
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -142,6 +230,24 @@ class _GoalsScreenState extends State<GoalsScreen> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Path drawStar(Size size) {
+    double degToRad(double deg) => deg * (pi / 180.0);
+    const numberOfPoints = 5;
+    final halfWidth = size.width / 2;
+    final outerRadius = halfWidth;
+    final innerRadius = halfWidth / 2.5;
+    final Path path = Path();
+    final double a = degToRad(90.0);
+    path.moveTo(halfWidth + outerRadius * cos(a), halfWidth + outerRadius * sin(a));
+    for (int i = 1; i <= numberOfPoints * 2; i++) {
+      final double r = (i % 2) == 0 ? outerRadius : innerRadius;
+      final double a = degToRad(90.0 + (360 / (numberOfPoints * 2)) * i);
+      path.lineTo(halfWidth + r * cos(a), halfWidth + r * sin(a));
+    }
+    path.close();
+    return path;
   }
 
   Widget _buildGoalCard(Map<String, dynamic> goal) {
@@ -174,11 +280,11 @@ class _GoalsScreenState extends State<GoalsScreen> {
               ),
               Container(
                 height: 180,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, const Color.fromRGBO(0, 0, 0, 0.7)],
+                    colors: [Colors.transparent, Color.fromRGBO(0, 0, 0, 0.7)],
                   ),
                 ),
               ),
@@ -198,6 +304,14 @@ class _GoalsScreenState extends State<GoalsScreen> {
                     backgroundColor: Colors.white30,
                     valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                   ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.delete_forever, color: Colors.white, size: 28),
+                  onPressed: () => _deleteGoal(goal['id'], goal['name']),
                 ),
               ),
             ],
@@ -230,7 +344,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: () => _showAddSavingsDialog(goal),
+                  onPressed: () => _showAddSavingsDialog(context, goal),
                   child: const Text('TAMBAH TABUNGAN'),
                 ),
               ],

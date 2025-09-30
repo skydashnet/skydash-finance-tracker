@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 import 'package:skydash_financial_tracker/src/services/local_auth_service.dart';
 import 'package:skydash_financial_tracker/src/features/auth/login_screen.dart';
 import 'package:skydash_financial_tracker/src/providers/theme_provider.dart';
@@ -42,21 +43,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (!mounted) return;
         
         setState(() => _isBiometricEnabled = true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login Biometrik diaktifkan!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+          NotificationHelper.showSuccess(
+            context,
+            title: 'Berhasil',
+            message: 'Login biometrik diaktifkan.',
+          );
       } else {
         if (!mounted) return;
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Perangkat tidak mendukung biometrik.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+          NotificationHelper.showError(
+            context,
+            title: 'Gagal',
+            message: 'Perangkat tidak mendukung autentikasi biometrik.',
+          );
       }
     } else {
       await prefs.setBool('isBiometricEnabled', false);
@@ -192,12 +190,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                   if (context.mounted) {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(result['body']['message']),
-                        backgroundColor: result['statusCode'] == 200 ? Colors.green : Colors.red,
-                      ),
-                    );
+                    if (result['statusCode'] == 200) {
+                      NotificationHelper.showSuccess(
+                        context,
+                        title: 'Berhasil',
+                        message: result['body']['message'],
+                      );
+                    } else {
+                      NotificationHelper.showError(
+                        context,
+                        title: 'Gagal',
+                        message: result['body']['message'],
+                      );
+                    }
                   }
                 }
               },

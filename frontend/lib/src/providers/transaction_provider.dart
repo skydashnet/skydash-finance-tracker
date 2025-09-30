@@ -61,4 +61,27 @@ class TransactionProvider extends ChangeNotifier {
     _filterCategoryId = null;
     await fetchTransactionsAndSummary();
   }
+
+  Map<int, double> get weeklyExpensesData {
+    final Map<int, double> data = {
+      for (var i = 1; i <= 7; i++) i: 0.0,
+    };
+    
+    final today = DateTime.now();
+    final sevenDaysAgo = today.subtract(const Duration(days: 6));
+
+    final recentExpenses = _transactions.where((trx) {
+      if (trx['category_type'] != 'expense') return false;
+      final trxDate = DateTime.parse(trx['transaction_date']);
+      return trxDate.isAfter(sevenDaysAgo.subtract(const Duration(days: 1))) && trxDate.isBefore(today.add(const Duration(days: 1)));
+    });
+
+    for (var trx in recentExpenses) {
+      final dayOfWeek = DateTime.parse(trx['transaction_date']).weekday;
+      final amount = num.parse(trx['amount'].toString()).toDouble();
+      data[dayOfWeek] = (data[dayOfWeek] ?? 0) + amount;
+    }
+
+    return data;
+  }
 }

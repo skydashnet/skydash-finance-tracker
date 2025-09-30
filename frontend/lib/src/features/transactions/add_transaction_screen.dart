@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
 import 'package:skydash_financial_tracker/src/services/api_service.dart';
+import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final Map<String, dynamic>? transaction;
@@ -17,9 +18,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
-
+  
   final ApiService _apiService = ApiService();
-
+  
   int? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
@@ -63,14 +64,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       lastDate: DateTime(2101),
     );
     if (picked != null && picked != _selectedDate) {
-      setState(() => _selectedDate = picked);
+      setState(() {
+        _selectedDate = picked;
+      });
     }
   }
 
   Future<void> _submitTransaction() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-
+      
       final Map<String, dynamic> result;
       if (_isEditMode) {
         result = await _apiService.updateTransaction(
@@ -96,10 +99,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         if (success) {
           Provider.of<TransactionProvider>(context, listen: false).fetchTransactionsAndSummary();
           Navigator.pop(context, true);
+
+          final unlockedAchievement = result['body']['unlockedAchievement'];
+          if (unlockedAchievement != null) {
+            Future.delayed(const Duration(milliseconds: 500), () {
+              final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
+              if (scaffoldMessenger != null) {
+                NotificationHelper.showAchievementUnlocked(
+                  scaffoldMessenger.context,
+                  achievement: unlockedAchievement,
+                );
+              }
+            });
+          }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal: ${result['body']['message']}'), backgroundColor: Colors.red),
-          );
+          NotificationHelper.showError(context, title: 'Gagal', message: result['body']['message']);
         }
       }
     }
@@ -126,6 +140,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             return const Center(child: Text('Gagal memuat kategori.'));
           }
           final categories = snapshot.data!;
+          final incomeCategories = categories.where((c) => c['type'] == 'income').toList();
+          final expenseCategories = categories.where((c) => c['type'] == 'expense').toList();
 
           return Form(
             key: _formKey,
@@ -136,48 +152,61 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   controller: _amountController,
                   decoration: const InputDecoration(labelText: 'Jumlah (Rp)'),
                   keyboardType: TextInputType.number,
-                  validator: (value) =>
-                      value!.isEmpty ? 'Jumlah tidak boleh kosong' : null,
+                  validator: (value) => value!.isEmpty ? 'Jumlah tidak boleh kosong' : null,
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<int>(
                   value: _selectedCategoryId,
                   hint: const Text('Pilih Kategori'),
-                  items: categories.map<DropdownMenuItem<int>>((category) {
-                    return DropdownMenuItem<int>(
-                      value: category['id'],
-                      child: Text(category['name']),
-                    );
-                  }).toList(),
-                  onChanged: (value) =>
-                      setState(() => _selectedCategoryId = value),
-                  validator: (value) =>
-                      value == null ? 'Kategori harus dipilih' : null,
+                  isExpanded: true,
+                  items: [
+                    const DropdownMenuItem<int>(
+                      enabled: false,
+                      child: Text('PEMASUKAN', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                    ),
+                    ...incomeCategories.map<DropdownMenuItem<int>>((category) {
+                      return DropdownMenuItem<int>(
+                        value: category['id'],
+                        child: Text("  ${category['name']}"),
+                      );
+                    }).toList(),
+                    const DropdownMenuItem<int>(
+                      enabled: false,
+                      child: Divider(),
+                    ),
+                    const DropdownMenuItem<int>(
+                      enabled: false,
+                      child: Text('PENGELUARAN', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                    ),
+                    ...expenseCategories.map<DropdownMenuItem<int>>((category) {
+                      return DropdownMenuItem<int>(
+                        value: category['id'],
+                        child: Text("  ${category['name']}"),
+                      );
+                    }).toList(),
+                  ],
+                  onChanged: (value) => setState(() => _selectedCategoryId = value),
+                  validator: (value) => value == null ? 'Kategori harus dipilih' : null,
                 ),
                 const SizedBox(height: 16),
+                
                 InkWell(
                   onTap: () => _selectDate(context),
                   child: InputDecorator(
                     decoration: const InputDecoration(labelText: 'Tanggal'),
-                    child: Text(
-                      DateFormat('d MMMM yyyy').format(_selectedDate),
-                    ),
+                    child: Text(DateFormat('d MMMM yyyy', 'id_ID').format(_selectedDate)),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Deskripsi (Opsional)',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Deskripsi (Opsional)'),
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submitTransaction,
-                  child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text('SIMPAN'),
-                ),
+                  child: _isLoading ? const CircularProgressIndicator() : const Text('SIMPAN'),
+                )
               ],
             ),
           );

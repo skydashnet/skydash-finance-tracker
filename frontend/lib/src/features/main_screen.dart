@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:skydash_financial_tracker/src/constants/app_colors.dart';
+import 'package:provider/provider.dart';
 import 'package:skydash_financial_tracker/src/features/dashboard/dashboard_screen.dart';
+import 'package:skydash_financial_tracker/src/features/goals/goals_screen.dart';
+import 'package:skydash_financial_tracker/src/features/reports/reports_screen.dart';
 import 'package:skydash_financial_tracker/src/features/settings/settings_screen.dart';
 import 'package:skydash_financial_tracker/src/features/transactions/add_transaction_screen.dart';
 import 'package:skydash_financial_tracker/src/features/transactions/transaction_history_screen.dart';
-import 'package:provider/provider.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
-import 'package:skydash_financial_tracker/src/features/reports/reports_screen.dart';
-import 'package:skydash_financial_tracker/src/features/goals/goals_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -32,18 +31,15 @@ class _MainScreenState extends State<MainScreen> {
       _selectedIndex = index;
     });
   }
-
+  
   void _navigateToAddTransaction() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const AddTransactionScreen()),
     );
-
+    
     if (result == true && mounted) {
-      Provider.of<TransactionProvider>(
-        context,
-        listen: false,
-      ).fetchTransactionsAndSummary();
+      Provider.of<TransactionProvider>(context, listen: false).fetchTransactionsAndSummary();
     }
   }
 
@@ -53,9 +49,10 @@ class _MainScreenState extends State<MainScreen> {
       body: _pages.elementAt(_selectedIndex),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddTransaction,
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
@@ -66,7 +63,7 @@ class _MainScreenState extends State<MainScreen> {
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
             BottomNavigationBarItem(icon: Icon(Icons.history_outlined), label: 'History'),
-            BottomNavigationBarItem(icon: Icon(Icons.flag_outlined), label: 'Goals'),
+            BottomNavigationBarItem(icon: Icon(Icons.flag_outlined), label: ''),
             BottomNavigationBarItem(icon: Icon(Icons.pie_chart_outline), label: 'Reports'),
             BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), label: 'Settings'),
           ],
@@ -77,7 +74,7 @@ class _MainScreenState extends State<MainScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           showSelectedLabels: true,
-          showUnselectedLabels: false,
+          showUnselectedLabels: true,
         ),
       ),
     );

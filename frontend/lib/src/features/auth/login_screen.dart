@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jwt_decode/jwt_decode.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 import 'package:skydash_financial_tracker/src/features/main_screen.dart';
 import 'package:skydash_financial_tracker/src/providers/user_provider.dart';
 import '../../constants/app_colors.dart';
@@ -41,6 +42,11 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (result['statusCode'] == 200) {
+      NotificationHelper.showSuccess(
+        context,
+        title: 'Berhasil',
+        message: result['body']['message'],
+      );
       final token = result['body']['token'];
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
@@ -59,11 +65,10 @@ class _LoginScreenState extends State<LoginScreen> {
         (Route<dynamic> route) => false,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Login failed: ${result['body']['message']}'),
-          backgroundColor: Colors.red,
-        ),
+      NotificationHelper.showError(
+        context,
+        title: 'Gagal',
+        message: result['body']['message'],
       );
     }
   }

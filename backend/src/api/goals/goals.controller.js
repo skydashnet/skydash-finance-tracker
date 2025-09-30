@@ -24,7 +24,10 @@ const goalsController = {
   },
   
   addSavings: async (req, res) => {
+    const connection = await pool.getConnection();
     try {
+      await connection.beginTransaction();
+
       const { id } = req.params;
       const { amount } = req.body;
       const userId = req.user.userId;
@@ -32,16 +35,25 @@ const goalsController = {
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: 'Invalid amount' });
       }
+      await connection.query('UPDATE goals SET current_amount = current_amount + ? WHERE id = ? AND user_id = ?', [amount, id, userId]);
+      const [goalData] = await connection.query('SELECT current_amount, target_amount FROM goals WHERE id = ?', [id]);
+      const { current_amount, target_amount } = goalData[0];
 
-      const sql = 'UPDATE goals SET current_amount = current_amount + ? WHERE id = ? AND user_id = ?';
-      const [result] = await pool.query(sql, [amount, id, userId]);
-
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'Goal not found' });
+      if (parseFloat(current_amount) >= parseFloat(target_amount)) {
+        await connection.query('INSERT IGNORE INTO user_achievements (user_id, achievement_id) VALUES (?, ?)', [userId, 8]);
       }
-      res.status(200).json({ message: 'Savings added successfully' });
+      const [lunasAchievement] = await connection.query('SELECT * FROM achievements WHERE id = 8');
+      await connection.commit();
+      res.status(200).json({ 
+        message: 'Savings added successfully',
+        unlockedAchievement: (parseFloat(current_amount) >= parseFloat(target_amount)) ? lunasAchievement[0] : null
+      });
     } catch (error) {
+      await connection.rollback();
+      console.error(error);
       res.status(500).json({ message: 'Server error' });
+    } finally {
+      if(connection) connection.release();
     }
   },
 
