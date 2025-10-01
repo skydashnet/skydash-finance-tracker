@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart'; // IMPORT PAKET ANIMASI
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ota_update/ota_update.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -128,7 +128,6 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // --- BAGIAN ANIMASI ---
             const Icon(
               Icons.track_changes,
               size: 100,
@@ -165,7 +164,6 @@ class _SplashScreenState extends State<SplashScreen> {
             .fade(delay: 700.ms, duration: 800.ms)
             .slideY(begin: 1.0, duration: 800.ms, curve: Curves.easeOutCubic),
             
-            // --- PROGRESS INDICATOR DIHAPUS ---
           ],
         ),
       ),
