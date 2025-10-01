@@ -207,16 +207,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      // Kita hilangkan AppBar agar header bisa full-width
       body: ListView(
-        padding: EdgeInsets.zero, // Hapus padding default
+        padding: EdgeInsets.zero,
         children: [
-          // --- BAGIAN HEADER PROFIL BARU ---
           Container(
             padding: const EdgeInsets.only(top: 60, bottom: 24, left: 24, right: 24),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [theme.colorScheme.primary, theme.colorScheme.primary.withOpacity(0.7)],
+                colors: [
+                  theme.colorScheme.primary,
+                  theme.colorScheme.primary.withOpacity(0.7)
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -240,7 +241,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           
-          // --- GRUP PENGATURAN ---
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -296,7 +296,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 24),
                 
-                // Tombol Logout di luar Card
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -317,7 +316,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- WIDGET HELPER BARU UNTUK GRUP PENGATURAN ---
   Widget _buildSettingsGroup({
     required BuildContext context,
     required String title,

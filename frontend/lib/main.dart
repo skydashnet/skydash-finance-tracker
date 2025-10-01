@@ -7,6 +7,12 @@ import 'package:skydash_financial_tracker/src/providers/theme_provider.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
 import 'package:skydash_financial_tracker/splash_screen.dart';
 
+const skydashnetGradient = LinearGradient(
+  colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
@@ -21,7 +27,7 @@ class MyApp extends StatelessWidget {
     final lightTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorSchemeSeed: AppColors.primary,
+      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0072FF)),
       scaffoldBackgroundColor: AppColors.background,
       cardTheme: CardThemeData(
         elevation: 2,
@@ -37,12 +43,19 @@ class MyApp extends StatelessWidget {
         bodyMedium: TextStyle(color: AppColors.textPrimary),
         titleMedium: TextStyle(color: AppColors.textPrimary),
       ),
+      bottomAppBarTheme: const BottomAppBarTheme(
+        color: Colors.white,
+        elevation: 8,
+      ),
     );
 
     final darkTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorSchemeSeed: AppColors.primary,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFF00C6FF),
+        brightness: Brightness.dark,
+      ),
       scaffoldBackgroundColor: const Color(0xFF121212),
       cardTheme: CardThemeData(
         color: const Color(0xFF1E1E1E),
@@ -57,6 +70,10 @@ class MyApp extends StatelessWidget {
         bodyLarge: TextStyle(color: Colors.white),
         bodyMedium: TextStyle(color: Colors.white70),
         titleMedium: TextStyle(color: Colors.white),
+      ),
+      bottomAppBarTheme: const BottomAppBarTheme(
+        color: Color(0xFF212121),
+        elevation: 8,
       ),
     );
 

@@ -35,8 +35,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
           if (provider.transactions.isEmpty) {
             return const Center(child: Text('Tidak ada data untuk ditampilkan.'));
           }
-
-          // Proses data untuk bagian analisis kategori
           final expenses = provider.transactions.where((t) => t['category_type'] == 'expense');
           final Map<String, double> categoryTotals = {};
           if (expenses.isNotEmpty) {
@@ -68,8 +66,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: _buildBarChart(provider),
               ),
               const SizedBox(height: 40),
-
-              // --- BAGIAN BARU: ANALISIS KATEGORI ---
               Text('Rincian Pengeluaran per Kategori', style: theme.textTheme.titleLarge),
               const SizedBox(height: 16),
               _buildCategoryAnalysis(context, categoryTotals, totalExpense),
@@ -191,7 +187,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
           topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
-        // --- PERBAIKAN: Hapus garis-garis yang mengganggu ---
         borderData: FlBorderData(show: false),
         gridData: const FlGridData(show: false),
         barGroups: List.generate(sortedKeys.length, (index) {
@@ -203,14 +198,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
               BarChartRodData(toY: data['income']!, color: Colors.green, width: 15, borderRadius: const BorderRadius.all(Radius.circular(4))),
               BarChartRodData(toY: data['expense']!, color: Colors.red, width: 15, borderRadius: const BorderRadius.all(Radius.circular(4))),
             ],
-            showingTooltipIndicators: [0, 1],
           );
         }),
       ),
     );
   }
-
-  // --- WIDGET BARU: Daftar Analisis Kategori ---
   Widget _buildCategoryAnalysis(BuildContext context, Map<String, double> categoryTotals, double totalExpense) {
     if (categoryTotals.isEmpty) {
       return const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('Tidak ada data pengeluaran untuk dianalisis.')));

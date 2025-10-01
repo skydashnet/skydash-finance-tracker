@@ -8,6 +8,12 @@ import 'package:skydash_financial_tracker/src/features/transactions/add_transact
 import 'package:skydash_financial_tracker/src/features/transactions/transaction_history_screen.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
 
+const skydashnetGradient = LinearGradient(
+  colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+);
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -47,10 +53,16 @@ class _MainScreenState extends State<MainScreen> {
       body: _pages[_bottomNavIndex],
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddTransaction,
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
         shape: const CircleBorder(),
-        child: const Icon(Icons.add),
+        child: Ink(
+          decoration: const BoxDecoration(
+            gradient: skydashnetGradient,
+            shape: BoxShape.circle,
+          ),
+          child: const Center(
+            child: Icon(Icons.add, color: Colors.white),
+          ),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: AnimatedBottomNavigationBar(
