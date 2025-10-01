@@ -1,18 +1,135 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
-import 'package:skydash_financial_tracker/src/utils/category_icon_mapper.dart';
 import 'package:skydash_financial_tracker/src/constants/app_colors.dart';
 import 'package:skydash_financial_tracker/src/features/transactions/add_transaction_screen.dart';
 import 'package:skydash_financial_tracker/src/features/transactions/widgets/filter_bottom_sheet.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
 import 'package:skydash_financial_tracker/src/services/api_service.dart';
+import 'package:skydash_financial_tracker/src/utils/category_icon_mapper.dart';
+import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 
 class TransactionHistoryScreen extends StatelessWidget {
   TransactionHistoryScreen({super.key});
 
   final ApiService _apiService = ApiService();
+  Future<void> _deleteTransaction(BuildContext context, Map<String, dynamic> transaction) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Konfirmasi Hapus"),
+          content: const Text("Apakah kamu yakin ingin menghapus transaksi ini?"),
+          actions: <Widget>[
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text("BATAL")),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text("HAPUS", style: TextStyle(color: Colors.red))),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true && context.mounted) {
+      final result = await _apiService.deleteTransaction(transaction['id']);
+      if (context.mounted) {
+        if (result['statusCode'] == 200) {
+          NotificationHelper.showSuccess(context, title: 'Berhasil', message: result['body']['message']);
+          Provider.of<TransactionProvider>(context, listen: false).fetchTransactionsAndSummary();
+        } else {
+          NotificationHelper.showError(context, title: 'Gagal', message: result['body']['message']);
+        }
+      }
+    }
+  }
+
+  void _showTransactionDetails(BuildContext context, Map<String, dynamic> transaction) {
+    final visual = CategoryIconMapper.getVisual(transaction['category_name']);
+    final isExpense = transaction['category_type'] == 'expense';
+    final amount = num.parse(transaction['amount'].toString());
+
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: visual.color.withOpacity(0.15),
+                    child: Icon(visual.icon, color: visual.color),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(transaction['category_name'], style: Theme.of(context).textTheme.titleLarge),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '${isExpense ? '-' : '+'} ${_formatCurrency(amount)}',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: isExpense ? Colors.red : Colors.green,
+                ),
+              ),
+              const Divider(height: 24),
+              ListTile(
+                leading: const Icon(Icons.calendar_today, size: 20),
+                title: const Text('Tanggal'),
+                subtitle: Text(_formatDate(transaction['transaction_date'])),
+              ),
+              if (transaction['description'] != null && transaction['description'].isNotEmpty)
+                ListTile(
+                  leading: const Icon(Icons.notes, size: 20),
+                  title: const Text('Deskripsi'),
+                  subtitle: Text(transaction['description']),
+                ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('HAPUS'),
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _deleteTransaction(context, transaction);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.edit_outlined),
+                      label: const Text('EDIT'),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddTransactionScreen(transaction: transaction),
+                          ),
+                        ).then((_) {
+                          Provider.of<TransactionProvider>(context, listen: false).fetchTransactionsAndSummary();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   void _navigateAndRefresh(BuildContext context) async {
     final result = await Navigator.push(
@@ -20,8 +137,7 @@ class TransactionHistoryScreen extends StatelessWidget {
       MaterialPageRoute(builder: (context) => const AddTransactionScreen()),
     );
     if (result == true && context.mounted) {
-      Provider.of<TransactionProvider>(context, listen: false)
-          .fetchTransactionsAndSummary();
+      Provider.of<TransactionProvider>(context, listen: false).fetchTransactionsAndSummary();
     }
   }
 
@@ -131,7 +247,7 @@ class TransactionHistoryScreen extends StatelessWidget {
       itemCount: provider.transactions.length,
       itemBuilder: (context, index) {
         final transaction = provider.transactions[index];
-        final bool isExpense = transaction['category_type'] == 'expense';
+        final isExpense = transaction['category_type'] == 'expense';
 
         return Dismissible(
           key: ValueKey(transaction['id']),
@@ -142,63 +258,16 @@ class TransactionHistoryScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: const Icon(Icons.delete_sweep, color: Colors.white),
           ),
-          confirmDismiss: (direction) async {
-            return await showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: const Text("Konfirmasi Hapus"),
-                  content: const Text(
-                      "Apakah kamu yakin ingin menghapus transaksi ini?"),
-                  actions: <Widget>[
-                    TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text("BATAL")),
-                    TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text("HAPUS",
-                            style: TextStyle(color: Colors.red))),
-                  ],
-                );
-              },
-            );
-          },
-          onDismissed: (direction) async {
-            final transactionId = transaction['id'];
-            final result = await _apiService.deleteTransaction(transactionId);
-            if (!context.mounted) return;
-            if (result['statusCode'] == 200) {
-              NotificationHelper.showSuccess(
-                context,
-                title: 'Berhasil',
-                message: result['body']['message'],
-              );
-            } else {
-              NotificationHelper.showError(
-                context,
-                title: 'Gagal',
-                message: result['body']['message'],
-              );
-            }
-            Provider.of<TransactionProvider>(context, listen: false)
-                .fetchTransactionsAndSummary();
+          confirmDismiss: (direction) async => false,
+          onDismissed: (direction) {
+            _deleteTransaction(context, transaction);
           },
           child: Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            elevation: 2,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: ListTile(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddTransactionScreen(transaction: transaction),
-                  ),
-                ).then((_) {
-                  Provider.of<TransactionProvider>(context, listen: false).fetchTransactionsAndSummary();
-                });
-              },
+              onTap: () => _showTransactionDetails(context, transaction),
               leading: Builder(
                 builder: (context) {
                   final visual = CategoryIconMapper.getVisual(transaction['category_name']);

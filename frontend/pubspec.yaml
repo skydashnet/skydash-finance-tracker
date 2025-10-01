@@ -1,7 +1,7 @@
 name: skydash_financial_tracker
 description: "A new Flutter project."
 publish_to: 'none' 
-version: 1.1.9+1
+version: 1.2.1+11
 
 environment:
   sdk: ^3.8.1
@@ -24,6 +24,8 @@ dependencies:
   another_flushbar: ^1.12.30
   confetti: ^0.7.0
   flutter_markdown: ^0.7.1
+  animated_bottom_navigation_bar: ^1.3.3
+  flutter_animate: ^4.5.0
 
 dev_dependencies:
   flutter_test:

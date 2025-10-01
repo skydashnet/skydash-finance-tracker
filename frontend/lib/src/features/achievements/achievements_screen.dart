@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:skydash_financial_tracker/src/providers/user_provider.dart';
 
@@ -7,28 +9,17 @@ class AchievementsScreen extends StatelessWidget {
 
   IconData _getIconFromString(String? iconName) {
     switch (iconName) {
-      case 'egg':
-        return Icons.egg_alt_outlined;
-      case 'local_fire_department':
-        return Icons.local_fire_department;
-      case 'savings':
-        return Icons.savings_outlined;
-      case 'looks_3':
-        return Icons.looks_3_outlined;
-      case 'whatshot':
-        return Icons.whatshot_outlined;
-      case 'trending_up':
-        return Icons.trending_up_outlined;
-      case 'check_circle':
-        return Icons.check_circle_outline;
-      case 'collections_bookmark':
-        return Icons.collections_bookmark_outlined;
-      case 'nights_stay':
-        return Icons.nights_stay_outlined;
-      case 'light_mode':
-        return Icons.light_mode_outlined;
-      default:
-        return Icons.star_border_outlined;
+      case 'egg': return Icons.egg_alt_outlined;
+      case 'local_fire_department': return Icons.local_fire_department;
+      case 'savings': return Icons.savings_outlined;
+      case 'looks_3': return Icons.looks_3_outlined;
+      case 'whatshot': return Icons.whatshot_outlined;
+      case 'trending_up': return Icons.trending_up_outlined;
+      case 'check_circle': return Icons.check_circle_outline;
+      case 'collections_bookmark': return Icons.collections_bookmark_outlined;
+      case 'nights_stay': return Icons.nights_stay_outlined;
+      case 'light_mode': return Icons.light_mode_outlined;
+      default: return Icons.star_border_outlined;
     }
   }
 
@@ -62,73 +53,72 @@ class AchievementsScreen extends StatelessWidget {
                 final description = achievement['description'];
                 final color = theme.colorScheme.primary;
 
-                Widget cardContent = Container(
-                  decoration: isUnlocked
-                      ? BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          gradient: RadialGradient(
-                            center: Alignment.topLeft,
-                            radius: 1.2,
-                            colors: [
-                              color.withOpacity(0.2),
-                              theme.cardColor.withOpacity(0.1)
-                            ],
-                          ),
-                        )
-                      : null,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(icon, size: 48, color: isUnlocked ? color : Colors.grey[700]),
-                        const SizedBox(height: 12),
-                        Text(
-                          name,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: isUnlocked
-                                ? theme.textTheme.bodyLarge?.color
-                                : Colors.grey[500],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          description,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isUnlocked
-                                ? theme.textTheme.bodyMedium?.color?.withOpacity(0.7)
-                                : Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
+                Widget cardContent = Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(icon, size: 48),
+                      const SizedBox(height: 12),
+                      Text(
+                        name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        description,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
+                      ),
+                    ],
                   ),
                 );
-
                 return Card(
-                  elevation: isUnlocked ? 4 : 1,
+                  elevation: isUnlocked ? 6 : 1,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15),
-                    side: isUnlocked
-                        ? BorderSide(color: color, width: 1.5)
-                        : BorderSide(color: theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[300]!, width: 1),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: isUnlocked
-                      ? cardContent
-                      : ShaderMask(
-                          shaderCallback: (bounds) => const LinearGradient(
-                            colors: [Colors.white, Colors.white],
-                          ).createShader(bounds),
-                          blendMode: BlendMode.saturation,
+                      ? Container(
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              center: Alignment.topLeft,
+                              radius: 1.5,
+                              colors: [color.withOpacity(0.3), theme.cardColor],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withOpacity(0.3),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
                           child: cardContent,
+                        )
+                      : Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            ImageFiltered(
+                              imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                              child: Opacity(
+                                opacity: 0.5,
+                                child: cardContent,
+                              ),
+                            ),
+                            Icon(
+                              Icons.lock_outline,
+                              size: 56,
+                              color: Colors.white.withOpacity(0.7),
+                            ),
+                          ],
                         ),
-                );
+                )
+                .animate()
+                .fadeIn(duration: 500.ms, delay: (100 * index).ms)
+                .slideY(begin: 0.2, curve: Curves.easeOut);
               },
             ),
     );

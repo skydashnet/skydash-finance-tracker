@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_animate/flutter_animate.dart'; // IMPORT PAKET ANIMASI
 import 'package:ota_update/ota_update.dart';
+import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skydash_financial_tracker/src/constants/app_colors.dart';
 import 'package:skydash_financial_tracker/src/features/auth/login_screen.dart';
 import 'package:skydash_financial_tracker/src/features/main_screen.dart';
 import 'package:skydash_financial_tracker/src/services/api_service.dart';
 import 'package:skydash_financial_tracker/src/services/local_auth_service.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,7 +20,8 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   final ApiService _apiService = ApiService();
-  static final logger = Logger();
+  final Logger logger = Logger();
+  String _loadingText = 'Checking for updates...';
 
   @override
   void initState() {
@@ -28,12 +30,14 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    await Future.delayed(const Duration(seconds: 2));
     final updateInfo = await _apiService.checkForUpdate();
     if (updateInfo != null && mounted) {
       _showUpdateDialog(updateInfo);
     } else {
-      _checkAuthStatus();
+      await Future.delayed(const Duration(seconds: 2));
+      if(mounted) {
+        _checkAuthStatus();
+      }
     }
   }
 
@@ -116,30 +120,52 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: AppColors.primary,
+    return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+          ? const Color(0xFF121212) 
+          : AppColors.primary,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.track_changes, size: 100, color: Colors.white),
-            SizedBox(height: 20),
-            Text(
-              'Skydash.NET',
+            // --- BAGIAN ANIMASI ---
+            const Icon(
+              Icons.track_changes,
+              size: 100,
+              color: Colors.white,
+            )
+            .animate()
+            .fade(duration: 900.ms)
+            .scale(delay: 300.ms, duration: 600.ms, curve: Curves.elasticOut),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'SkydashNET',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
+                letterSpacing: 2,
               ),
-            ),
-            Text(
-              'Financial Tracker',
-              style: TextStyle(fontSize: 16, color: Colors.white70),
-            ),
-            SizedBox(height: 40),
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
+            )
+            .animate()
+            .fade(delay: 500.ms, duration: 800.ms)
+            .slideY(begin: 1.0, duration: 800.ms, curve: Curves.easeOutCubic),
+            
+            const Text(
+              'Finance Tracker',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white70,
+                letterSpacing: 1,
+              ),
+            )
+            .animate()
+            .fade(delay: 700.ms, duration: 800.ms)
+            .slideY(begin: 1.0, duration: 800.ms, curve: Curves.easeOutCubic),
+            
+            // --- PROGRESS INDICATOR DIHAPUS ---
           ],
         ),
       ),

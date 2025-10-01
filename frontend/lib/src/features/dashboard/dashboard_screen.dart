@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:skydash_financial_tracker/src/constants/app_colors.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
 import 'package:skydash_financial_tracker/src/utils/category_icon_mapper.dart';
+import 'package:skydash_financial_tracker/src/features/goals/goals_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -97,6 +98,21 @@ class DashboardScreen extends StatelessWidget {
           )
         else
           ...recentTransactions.map((trx) => _buildRecentTransactionTile(trx)),
+        const SizedBox(height: 16),
+        Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const GoalsScreen()));
+            },
+            child: const ListTile(
+              leading: Icon(Icons.flag_outlined),
+              title: Text('Target Tabungan', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text('Lihat progres impianmu'),
+              trailing: Icon(Icons.chevron_right),
+            ),
+          ),
+        ),
       ],
     );
   }
