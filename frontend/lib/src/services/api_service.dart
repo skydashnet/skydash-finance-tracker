@@ -484,4 +484,59 @@ class ApiService {
       return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
     }
   }
+
+  Future<Map<String, dynamic>> createRecurringRule({
+    required int categoryId,
+    required double amount,
+    String? description,
+    required String recurrenceRule,
+    required String startDate,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+      
+      final url = Uri.parse('$_baseUrl/recurring');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+        body: json.encode({
+          'category_id': categoryId,
+          'amount': amount,
+          'description': description,
+          'recurrence_rule': recurrenceRule,
+          'start_date': startDate,
+        }),
+      );
+      return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
+    }
+  }
+
+  Future<Map<String, dynamic>> getUserRecurringRules() async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+
+      final url = Uri.parse('$_baseUrl/recurring');
+      final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
+      return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteRecurringRule(int ruleId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+
+      final url = Uri.parse('$_baseUrl/recurring/$ruleId');
+      final response = await http.delete(url, headers: {'Authorization': 'Bearer $token'});
+      return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
+    }
+  }
 }

@@ -7,9 +7,11 @@ const userRouter = require('./api/users/user.router');
 const transactionRouter = require('./api/transactions/transactions.router');
 const categoryRouter = require('./api/categories/categories.router');
 const reportRouter = require('./api/reports/reports.router');
+const goalRouter = require('./api/goals/goals.router');
+const recurringRouter = require('./api/recurring/recurring.router');
 
 const app = express();
-
+require('./cron');
 app.use(cors());
 app.use(express.json());
 
@@ -22,6 +24,8 @@ app.use('/api/users', userRouter);
 app.use('/api/transactions', transactionRouter);
 app.use('/api/categories', categoryRouter);
 app.use('/api/reports', reportRouter);
+app.use('/api/goals', goalRouter);
+app.use('/api/recurring', recurringRouter);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
