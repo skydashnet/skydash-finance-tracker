@@ -7,6 +7,7 @@ import 'package:skydash_financial_tracker/src/features/settings/settings_screen.
 import 'package:skydash_financial_tracker/src/features/transactions/add_transaction_screen.dart';
 import 'package:skydash_financial_tracker/src/features/transactions/transaction_history_screen.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
+import 'package:skydash_financial_tracker/src/features/budget/budget_screen.dart';
 
 const skydashnetGradient = LinearGradient(
   colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
@@ -25,12 +26,14 @@ class _MainScreenState extends State<MainScreen> {
   int _bottomNavIndex = 0;
   final List<Widget> _pages = [
     const DashboardScreen(),
+    const BudgetScreen(),
     TransactionHistoryScreen(),
     const ReportsScreen(),
     const SettingsScreen(),
   ];
   final List<IconData> _iconList = [
     Icons.dashboard_outlined,
+    Icons.wallet_outlined,
     Icons.history_outlined,
     Icons.pie_chart_outline,
     Icons.settings_outlined,

@@ -20,7 +20,7 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
   final ApiService _apiService = ApiService();
   
   Map<String, dynamic>? _selectedCategory;
-  DateTime _startDate = DateTime.now();
+  final DateTime _startDate = DateTime.now();
   
   Frequency _frequency = Frequency.monthly;
   int _dayOfMonth = 1;
@@ -45,7 +45,7 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
       final days = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
       return 'FREQ=WEEKLY;BYDAY=${days[_dayOfWeek - 1]}';
     }
-    return 'FREQ=DAILY'; // Fallback
+    return 'FREQ=DAILY';
   }
 
   Future<void> _submitRule() async {
@@ -85,7 +85,6 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Amount
             TextFormField(
               controller: _amountController,
               decoration: const InputDecoration(labelText: 'Jumlah (Rp)'),
@@ -94,7 +93,6 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
             ),
             const SizedBox(height: 16),
             
-            // Category Picker
             ListTile(
               contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               shape: RoundedRectangleBorder(
@@ -116,7 +114,6 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Recurrence Rule Builder
             Text('Aturan Berulang', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             DropdownButtonFormField<Frequency>(

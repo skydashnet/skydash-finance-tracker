@@ -539,4 +539,48 @@ class ApiService {
       return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
     }
   }
+
+  Future<Map<String, dynamic>> getBudgets() async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+      final url = Uri.parse('$_baseUrl/budgets');
+      final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
+      return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
+    }
+  }
+
+  Future<Map<String, dynamic>> createOrUpdateBudget({
+    required int categoryId,
+    required double amount,
+    required String period,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+      final url = Uri.parse('$_baseUrl/budgets');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+        body: json.encode({'category_id': categoryId, 'amount': amount, 'period': period}),
+      );
+      return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
+    }
+  }
+  
+  Future<Map<String, dynamic>> deleteBudget(int budgetId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+      final url = Uri.parse('$_baseUrl/budgets/$budgetId');
+      final response = await http.delete(url, headers: {'Authorization': 'Bearer $token'});
+      return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
+    }
+  }
 }

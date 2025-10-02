@@ -9,6 +9,7 @@ const categoryRouter = require('./api/categories/categories.router');
 const reportRouter = require('./api/reports/reports.router');
 const goalRouter = require('./api/goals/goals.router');
 const recurringRouter = require('./api/recurring/recurring.router');
+const budgetRouter = require('./api/budgets/budgets.router');
 
 const app = express();
 require('./cron');
@@ -26,6 +27,7 @@ app.use('/api/categories', categoryRouter);
 app.use('/api/reports', reportRouter);
 app.use('/api/goals', goalRouter);
 app.use('/api/recurring', recurringRouter);
+app.use('/api/budgets', budgetRouter);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
