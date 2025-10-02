@@ -1,4 +1,5 @@
 const pool = require('../../config/database');
+const { Parser } = require('json2csv');
 
 const awardAchievement = async (connection, userId, achievementId) => {
   await connection.query('INSERT IGNORE INTO user_achievements (user_id, achievement_id) VALUES (?, ?)', [userId, 1]);
@@ -160,7 +161,45 @@ const transactionsController = {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
-}
+},
+exportTransactions: async (req, res) => {
+    try {
+      const userId = req.user.userId;
+      const { year, month } = req.query;
+
+      if (!year || !month) {
+        return res.status(400).json({ message: 'Tahun dan bulan wajib disertakan.' });
+      }
+
+      const sql = `
+        SELECT 
+          t.transaction_date as Tanggal, 
+          c.name as Kategori,
+          c.type as Tipe,
+          t.amount as Jumlah,
+          t.description as Deskripsi
+        FROM transactions t
+        JOIN categories c ON t.category_id = c.id
+        WHERE t.user_id = ? AND YEAR(t.transaction_date) = ? AND MONTH(t.transaction_date) = ?
+        ORDER BY t.transaction_date ASC
+      `;
+      const [transactions] = await pool.query(sql, [userId, year, month]);
+
+      if (transactions.length === 0) {
+        return res.status(404).json({ message: 'Tidak ada data transaksi untuk periode ini.' });
+      }
+      const json2csvParser = new Parser();
+      const csv = json2csvParser.parse(transactions);
+      const fileName = `laporan-transaksi-${year}-${month}.csv`;
+      res.header('Content-Type', 'text/csv');
+      res.attachment(fileName);
+      res.status(200).send(csv);
+
+    } catch (error) {
+      console.error('Error exporting transactions:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
 };
 
 

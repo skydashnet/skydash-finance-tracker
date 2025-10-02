@@ -374,9 +374,8 @@ class ApiService {
       final currentInfo = await PackageInfo.fromPlatform();
       final currentVersion = Version.parse(currentInfo.version);
       logger.i('Current App Version: $currentVersion');
-
       final url = Uri.parse('https://api.github.com/repos/skydashnet/skydash-finance-tracker/releases/latest');
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> releaseInfo = json.decode(response.body);
@@ -403,7 +402,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      logger.e('Update check failed: $e');
+      logger.e('Update check failed (e.g., timeout or no internet): $e');
       return null;
     }
   }
@@ -579,6 +578,30 @@ class ApiService {
       final url = Uri.parse('$_baseUrl/budgets/$budgetId');
       final response = await http.delete(url, headers: {'Authorization': 'Bearer $token'});
       return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+    } catch (e) {
+      return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
+    }
+  }
+
+  Future<Map<String, dynamic>> exportTransactions({
+    required int year,
+    required int month,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) { return {'statusCode': 401, 'body': {'message': 'Unauthorized'}}; }
+
+      final uri = Uri.parse('$_baseUrl/transactions/export').replace(queryParameters: {
+        'year': year.toString(),
+        'month': month.toString(),
+      });
+      
+      final response = await http.get(uri, headers: {'Authorization': 'Bearer $token'});
+      if (response.statusCode == 200) {
+        return {'statusCode': 200, 'body': response.body};
+      } else {
+        return {'statusCode': response.statusCode, 'body': json.decode(response.body)};
+      }
     } catch (e) {
       return {'statusCode': 500, 'body': {'message': 'A network error occurred: $e'}};
     }

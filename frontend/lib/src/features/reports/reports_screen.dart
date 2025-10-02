@@ -2,8 +2,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:open_file_plus/open_file_plus.dart';
+import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
 import 'package:skydash_financial_tracker/src/utils/category_icon_mapper.dart';
+import 'package:skydash_financial_tracker/src/services/export_service.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -20,12 +23,69 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return format.format(amount);
   }
 
+  void _showExportDialog(BuildContext context) {
+    final ExportService exportService = ExportService();
+    DateTime selectedDate = DateTime.now();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ekspor Laporan'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Pilih format ekspor untuk bulan ini:'),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.description),
+            label: const Text('CSV'),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final path = await exportService.exportToCsv(selectedDate.year, selectedDate.month);
+              if (path != null && mounted) {
+                NotificationHelper.showSuccess(context, title: 'Berhasil', message: 'Laporan CSV disimpan di folder Download.');
+                OpenFile.open(path);
+              } else if (mounted) {
+                 NotificationHelper.showError(context, title: 'Gagal', message: 'Gagal mengekspor laporan.');
+              }
+            },
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.picture_as_pdf),
+            label: const Text('PDF'),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final path = await exportService.exportToPdf(selectedDate.year, selectedDate.month);
+              if (path == 'no_data' && mounted) {
+                NotificationHelper.showError(context, title: 'Info', message: 'Tidak ada data transaksi untuk diekspor.');
+              } else if (path != null && mounted) {
+                NotificationHelper.showSuccess(context, title: 'Berhasil', message: 'Laporan PDF disimpan di folder Download.');
+                OpenFile.open(path);
+              } else if (mounted) {
+                 NotificationHelper.showError(context, title: 'Gagal', message: 'Gagal mengekspor laporan.');
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Laporan Keuangan'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share),
+            onPressed: () => _showExportDialog(context),
+          )
+        ],
       ),
       body: Consumer<TransactionProvider>(
         builder: (context, provider, child) {
