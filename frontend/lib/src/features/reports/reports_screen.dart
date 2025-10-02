@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:open_file_plus/open_file_plus.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
 import 'package:skydash_financial_tracker/src/utils/category_icon_mapper.dart';
@@ -47,7 +47,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               final path = await exportService.exportToCsv(selectedDate.year, selectedDate.month);
               if (path != null && mounted) {
                 NotificationHelper.showSuccess(context, title: 'Berhasil', message: 'Laporan CSV disimpan di folder Download.');
-                OpenFile.open(path);
+                OpenFilex.open(path);
               } else if (mounted) {
                  NotificationHelper.showError(context, title: 'Gagal', message: 'Gagal mengekspor laporan.');
               }
@@ -63,7 +63,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 NotificationHelper.showError(context, title: 'Info', message: 'Tidak ada data transaksi untuk diekspor.');
               } else if (path != null && mounted) {
                 NotificationHelper.showSuccess(context, title: 'Berhasil', message: 'Laporan PDF disimpan di folder Download.');
-                OpenFile.open(path);
+                OpenFilex.open(path);
               } else if (mounted) {
                  NotificationHelper.showError(context, title: 'Gagal', message: 'Gagal mengekspor laporan.');
               }

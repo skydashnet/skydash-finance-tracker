@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:logger/logger.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -39,10 +39,13 @@ class ExportService {
 
   Future<String?> exportToCsv(int year, int month) async {
     if (!await requestStoragePermission()) return null;
+
     final result = await _apiService.exportTransactions(year: year, month: month);
     if (result['statusCode'] != 200) return null;
+
     final path = await getDownloadPath();
     if (path == null) return null;
+
     final fileName = 'laporan-transaksi-$year-$month.csv';
     final file = File('$path/$fileName');
     await file.writeAsString(result['body']);
@@ -51,11 +54,15 @@ class ExportService {
   
   Future<String?> exportToPdf(int year, int month) async {
     if (!await requestStoragePermission()) return null;
+
     final result = await _apiService.getTransactions(year: year, month: month);
     if (result['statusCode'] != 200) return null;
+
     final List<dynamic> transactions = result['body'];
     if (transactions.isEmpty) return 'no_data';
+    
     final pdf = pw.Document();
+    
     final fontData = await rootBundle.load("assets/fonts/Poppins-Regular.ttf");
     final boldFontData = await rootBundle.load("assets/fonts/Poppins-Bold.ttf");
     final font = pw.Font.ttf(fontData);
@@ -140,8 +147,6 @@ class ExportService {
 
   pw.Widget _buildPdfTable(pw.Context context, List<dynamic> transactions, pw.Font font, pw.Font boldFont) {
     const tableHeaders = ['Tanggal', 'Kategori', 'Deskripsi', 'Pemasukan', 'Pengeluaran'];
-    
-    // --- PERBAIKAN: Gunakan TableHelper.fromTextArray, bukan Table.fromTextArray ---
     return pw.TableHelper.fromTextArray(
       headers: tableHeaders,
       data: transactions.map((trx) {
