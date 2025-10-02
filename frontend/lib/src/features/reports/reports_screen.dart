@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
-import 'package:skydash_financial_tracker/src/utils/category_icon_mapper.dart';
 import 'package:skydash_financial_tracker/src/services/export_service.dart';
+import 'package:skydash_financial_tracker/src/utils/category_icon_mapper.dart';
+import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -31,10 +31,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Ekspor Laporan'),
-        content: Column(
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Pilih format ekspor untuk bulan ini:'),
+            Text('Pilih format ekspor untuk bulan ini:'),
           ],
         ),
         actions: [
