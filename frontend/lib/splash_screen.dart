@@ -21,7 +21,6 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   final ApiService _apiService = ApiService();
   final Logger logger = Logger();
-  String _loadingText = 'Checking for updates...';
 
   @override
   void initState() {

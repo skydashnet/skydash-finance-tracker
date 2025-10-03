@@ -47,50 +47,65 @@ class AchievementsScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final achievement = achievements[index];
                 final bool isUnlocked = achievement['unlocked_at'] != null;
-
+                
                 final icon = _getIconFromString(achievement['icon_name']);
                 final name = achievement['name'];
                 final description = achievement['description'];
                 final color = theme.colorScheme.primary;
+                final descriptionColor = theme.textTheme.bodyMedium?.color;
 
                 Widget cardContent = Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(icon, size: 48),
+                      Icon(icon, size: 48, color: isUnlocked ? color : Colors.grey[700]),
                       const SizedBox(height: 12),
                       Text(
                         name,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isUnlocked ? theme.textTheme.bodyLarge?.color : Colors.grey[500],
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         description,
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: (descriptionColor != null)
+                            ? Color.fromRGBO(0, 0, 0, 0.698)
+                            : Colors.grey[600],
+                        ),
                       ),
                     ],
                   ),
                 );
+
                 return Card(
                   elevation: isUnlocked ? 6 : 1,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15),
+                    side: isUnlocked 
+                      ? BorderSide(color: color, width: 1.5) 
+                      : BorderSide(color: theme.brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[300]!, width: 1),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: isUnlocked
                       ? Container(
                           decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
                             gradient: RadialGradient(
                               center: Alignment.topLeft,
-                              radius: 1.5,
-                              colors: [color.withOpacity(0.3), theme.cardColor],
+                              radius: 1.2,
+                              colors: [Color.fromRGBO(0, 0, 0, 0.2), theme.cardColor],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: color.withOpacity(0.3),
+                                color: Color.fromRGBO(0, 0, 0, 0.3),
                                 blurRadius: 10,
                                 spreadRadius: 2,
                               ),
@@ -111,7 +126,7 @@ class AchievementsScreen extends StatelessWidget {
                             Icon(
                               Icons.lock_outline,
                               size: 56,
-                              color: Colors.white.withOpacity(0.7),
+                              color: const Color.fromRGBO(0, 0, 0, 0.702),
                             ),
                           ],
                         ),

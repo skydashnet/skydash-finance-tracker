@@ -62,7 +62,7 @@ class TransactionHistoryScreen extends StatelessWidget {
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: visual.color.withOpacity(0.15),
+                    backgroundColor: Color.fromRGBO(0, 0, 0 , 0.5),
                     child: Icon(visual.icon, color: visual.color),
                   ),
                   const SizedBox(width: 16),
