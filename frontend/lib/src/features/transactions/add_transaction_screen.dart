@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:skydash_financial_tracker/src/features/transactions/category_picker_screen.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
 import 'package:skydash_financial_tracker/src/services/api_service.dart';
 import 'package:skydash_financial_tracker/src/utils/category_icon_mapper.dart';
 import 'package:skydash_financial_tracker/src/utils/notification_helper.dart';
+import 'package:skydash_financial_tracker/src/services/ocr_service.dart'; 
 
 class AddTransactionScreen extends StatefulWidget {
   final Map<String, dynamic>? transaction;
@@ -20,6 +22,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final OcrService _ocrService = OcrService();
+  final ImagePicker _picker = ImagePicker();
   final ApiService _apiService = ApiService();
 
   Map<String, dynamic>? _selectedCategory;
@@ -57,6 +61,35 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       setState(() {
         _selectedCategory = result;
       });
+    }
+  }
+
+  Future<void> _scanReceipt() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+      if (image == null) return;
+
+      setState(() => _isLoading = true);
+      
+      final scannedData = await _ocrService.scanImage(image);
+
+      if (mounted) {
+        setState(() {
+          if (scannedData['amount'] != null) {
+            _amountController.text = (scannedData['amount'] as double).toStringAsFixed(0);
+          }
+          if (scannedData['description'] != null) {
+            _descriptionController.text = scannedData['description'];
+          }
+          _isLoading = false;
+        });
+        NotificationHelper.showSuccess(context, title: 'Scan Berhasil', message: 'Silakan periksa kembali datanya.');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        NotificationHelper.showError(context, title: 'Scan Gagal', message: 'Tidak dapat memproses gambar.');
+      }
     }
   }
 
@@ -155,8 +188,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Transaksi' : 'Tambah Transaksi Baru'),
+        actions: [
+          if (!_isEditMode)
+            IconButton(
+              icon: const Icon(Icons.camera_alt_outlined),
+              onPressed: _scanReceipt,
+              tooltip: 'Scan Struk',
+            ),
+        ],
       ),
-      body: Form(
+      body: _isLoading 
+          ? const Center(child: CircularProgressIndicator()) : Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16.0),

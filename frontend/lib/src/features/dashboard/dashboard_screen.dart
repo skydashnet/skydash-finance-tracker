@@ -80,35 +80,6 @@ class DashboardScreen extends StatelessWidget {
           color: Theme.of(context).colorScheme.primary,
           icon: Icons.account_balance_wallet,
         ),
-        const SizedBox(height: 16),
-        Card(
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const GoalsScreen()));
-            },
-            child: const ListTile(
-              leading: Icon(Icons.flag_outlined),
-              title: Text('Target Tabungan', style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('Lihat progres impianmu'),
-              trailing: Icon(Icons.chevron_right),
-            ),
-          ),
-        ),
-        Card(
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const BudgetScreen()));
-            },
-            child: const ListTile(
-              leading: Icon(Icons.wallet_outlined),
-              title: Text('Anggaran Bulanan', style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('Kelola batas pengeluaranmu'),
-              trailing: Icon(Icons.chevron_right),
-            ),
-          ),
-        ),
         const SizedBox(height: 32),
         Text('Pengeluaran 7 Hari Terakhir', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
@@ -127,6 +98,21 @@ class DashboardScreen extends StatelessWidget {
           )
         else
           ...recentTransactions.map((trx) => _buildRecentTransactionTile(trx)),
+        const SizedBox(height: 16),
+        Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const BudgetScreen()));
+            },
+            child: const ListTile(
+              leading: Icon(Icons.wallet_outlined),
+              title: Text('Anggaran Bulanan', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text('Kelola batas pengeluaranmu'),
+              trailing: Icon(Icons.chevron_right),
+            ),
+          ),
+        ),
         const SizedBox(height: 16),
         Card(
           clipBehavior: Clip.antiAlias,
