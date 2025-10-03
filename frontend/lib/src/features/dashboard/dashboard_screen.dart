@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:skydash_financial_tracker/src/constants/app_colors.dart';
 import 'package:skydash_financial_tracker/src/providers/transaction_provider.dart';
 import 'package:skydash_financial_tracker/src/utils/category_icon_mapper.dart';
+import 'package:skydash_financial_tracker/src/features/budget/budget_screen.dart';
 import 'package:skydash_financial_tracker/src/features/goals/goals_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -79,7 +80,35 @@ class DashboardScreen extends StatelessWidget {
           color: Theme.of(context).colorScheme.primary,
           icon: Icons.account_balance_wallet,
         ),
-        
+        const SizedBox(height: 16),
+        Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const GoalsScreen()));
+            },
+            child: const ListTile(
+              leading: Icon(Icons.flag_outlined),
+              title: Text('Target Tabungan', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text('Lihat progres impianmu'),
+              trailing: Icon(Icons.chevron_right),
+            ),
+          ),
+        ),
+        Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const BudgetScreen()));
+            },
+            child: const ListTile(
+              leading: Icon(Icons.wallet_outlined),
+              title: Text('Anggaran Bulanan', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text('Kelola batas pengeluaranmu'),
+              trailing: Icon(Icons.chevron_right),
+            ),
+          ),
+        ),
         const SizedBox(height: 32),
         Text('Pengeluaran 7 Hari Terakhir', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),

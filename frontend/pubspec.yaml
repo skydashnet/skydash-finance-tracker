@@ -44,6 +44,12 @@ flutter:
   assets:
     - assets/icons/
     - assets/fonts/
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
 flutter_icons:
   android: true
   ios: true
